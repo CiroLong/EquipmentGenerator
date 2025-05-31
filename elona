@@ -1,0 +1,370 @@
+import React, { useState } from 'react';
+import { Sword, Shield, Sparkles, RefreshCw } from 'lucide-react';
+
+const EquipmentGenerator = () => {
+  // 形容词词库
+  const adjectives = [
+    '传说', '史诗', '稀有',
+    '神圣', '黑暗', '火焰', '冰霜', '雷电',
+    '光明', '暗影', '血腥', '锋利', '坚固',
+    '魔法', '远古', '禁忌', '神秘', '强化',
+    '破损', '生锈', '闪耀', '诅咒', '祝福',
+    '龙鳞', '凤羽', '星辰', '月影', '日炎',
+    '风暴', '大地', '海洋', '天空', '地狱',
+    '天堂', '虚空', '混沌', '秩序', '永恒'
+  ];
+
+  // 主属性词库
+  const mainAttributes = ['力量', '体质', '灵巧', '感知', '魔力', '意志'];
+  
+  // 高级属性词库（生成概率低）
+  const advancedAttributes = ['速度', '运气'];
+
+  // 技能词库 - 按属性分类
+  const skillsByAttribute = {
+    '力量': ['长剑专精', '斧专精', '格斗技巧', '镰刀专精', '双手武器', '战术', '举重', '铁匠', '栽培'],
+    '体质': ['杖专精', '长杆专精', '钝器专精', '盾专精', '中装备', '重装备', '木匠', '采掘', '治愈'],
+    '灵巧': ['短剑专精', '二刀流', '弓专精', '弩专精', '投掷技巧', '轻装备', '精通闪避', '搜索', '宝石加工', '裁缝', '开锁', '解除陷阱'],
+    '感知': ['枪械专精', '远程武器专精', '心眼', '自然学识', '潜行', '垂钓', '鉴定', '侦查', '演奏', '元素精灵强化'],
+    '魔力': ['魔法修行', '元素引导', '暗影术', '结界术', '仪式', '炼金术', '烹饪', '解剖学', '读书', '基因学'],
+    '意志': ['恢复术', '祝福术', '招魂术', '精神控制', '默记', '魔力极限', '交涉', '赞助', '冥想', '骑乘', '旅行', '信仰']
+  };
+
+  // 获取所有技能列表
+  const allSkills = Object.values(skillsByAttribute).flat();
+
+  // 名词词库（装备类型）
+  const nouns = [
+    '长剑', '短剑', '巨剑', '匕首', '法杖',
+    '盾牌', '战锤', '长弓', '弩箭', '法球',
+    '头盔', '胸甲', '护腿', '战靴', '手套',
+    '项链', '戒指', '耳环', '腰带', '护符',
+    '斗篷', '长袍', '皮甲', '锁甲', '板甲',
+    '战斧', '长枪', '三叉戟', '魔杖', '水晶球',
+    '护腕', '肩甲', '面具', '王冠', '权杖'
+  ];
+
+  const [currentEquipment, setCurrentEquipment] = useState(null);
+  const [equipmentHistory, setEquipmentHistory] = useState([]);
+
+  // 生成附魔词条
+  const generateEnchantment = () => {
+    // 30%概率生成属性词条，70%概率生成技能词条
+    const isAttributeEnchantment = Math.random() < 0.3;
+    
+    if (isAttributeEnchantment) {
+      // 生成属性词条
+      // 10%概率高级属性，90%概率主属性
+      const isAdvanced = Math.random() < 0.1;
+      const attributePool = isAdvanced ? advancedAttributes : mainAttributes;
+      const attribute = attributePool[Math.floor(Math.random() * attributePool.length)];
+      const level = Math.floor(Math.random() * 20) + 1; // 1-20
+      
+      return {
+        type: 'attribute',
+        name: attribute,
+        level,
+        isAdvanced,
+        display: `${attribute}+${level}`,
+        category: '属性词条'
+      };
+    } else {
+      // 生成技能词条
+      const attributeKeys = Object.keys(skillsByAttribute);
+      const randomAttribute = attributeKeys[Math.floor(Math.random() * attributeKeys.length)];
+      const skillsInCategory = skillsByAttribute[randomAttribute];
+      const skill = skillsInCategory[Math.floor(Math.random() * skillsInCategory.length)];
+      const level = Math.floor(Math.random() * 20) + 1; // 1-20
+      
+      return {
+        type: 'skill',
+        name: skill,
+        level,
+        belongsTo: randomAttribute,
+        display: `${skill}+${level}`,
+        category: '技能词条'
+      };
+    }
+  };
+
+  // 获取装备品质
+  const getQuality = (adjective) => {
+    if (adjective === '传说') return 'legendary';
+    if (adjective === '史诗') return 'epic';
+    if (adjective === '稀有') return 'rare';
+    
+    // 其他形容词按概率分配品质
+    const rand = Math.random();
+    if (rand < 0.1) return 'legendary';      // 10%概率传说
+    else if (rand < 0.3) return 'epic';      // 20%概率史诗  
+    else return 'rare';                      // 70%概率稀有
+  };
+
+  // 根据品质生成附魔词条
+  const generateEnchantments = (quality) => {
+    let enchantmentCount = 0;
+    
+    if (quality === 'legendary') {
+      enchantmentCount = Math.random() < 0.5 ? 2 : 3; // 50%概率2个，50%概率3个
+    } else if (quality === 'epic') {
+      enchantmentCount = Math.random() < 0.5 ? 2 : 3; // 50%概率2个，50%概率3个
+    } else if (quality === 'rare') {
+      enchantmentCount = Math.random() < 0.7 ? 1 : 2; // 70%概率1个，30%概率2个
+    }
+
+    const enchantments = [];
+    const usedNames = new Set();
+
+    for (let i = 0; i < enchantmentCount; i++) {
+      let attempts = 0;
+      let enchantment;
+      
+      // 确保不重复名称
+      do {
+        enchantment = generateEnchantment();
+        attempts++;
+      } while (usedNames.has(enchantment.name) && attempts < 20);
+      
+      if (!usedNames.has(enchantment.name)) {
+        usedNames.add(enchantment.name);
+        enchantments.push(enchantment);
+      }
+    }
+
+    return enchantments;
+  };
+
+  // 随机生成装备
+  const generateEquipment = () => {
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    const quality = getQuality(randomAdjective);
+    const enchantments = generateEnchantments(quality);
+    
+    const newEquipment = {
+      id: Date.now(),
+      name: `${randomAdjective}的${randomNoun}`,
+      adjective: randomAdjective,
+      noun: randomNoun,
+      quality,
+      enchantments,
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    setCurrentEquipment(newEquipment);
+    setEquipmentHistory(prev => [newEquipment, ...prev.slice(0, 9)]); // 保留最近10个
+  };
+
+  // 获取装备稀有度颜色
+  const getRarityColor = (quality) => {
+    const rarityColors = {
+      'legendary': 'text-orange-500',
+      'epic': 'text-purple-500', 
+      'rare': 'text-blue-500'
+    };
+    return rarityColors[quality] || 'text-blue-500';
+  };
+
+  // 获取品质背景色
+  const getQualityBg = (quality) => {
+    const qualityBgs = {
+      'legendary': 'bg-gradient-to-r from-orange-600/20 to-yellow-600/20 border-orange-500/50',
+      'epic': 'bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/50',
+      'rare': 'bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-blue-500/50'
+    };
+    return qualityBgs[quality] || 'bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border-blue-500/50';
+  };
+
+  // 获取装备图标
+  const getEquipmentIcon = (noun) => {
+    if (noun.includes('剑') || noun.includes('斧') || noun.includes('锤') || noun.includes('枪')) {
+      return <Sword className="w-6 h-6" />;
+    } else if (noun.includes('盾') || noun.includes('甲') || noun.includes('盔')) {
+      return <Shield className="w-6 h-6" />;
+    } else {
+      return <Sparkles className="w-6 h-6" />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* 标题 */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">⚔️ 装备生成器</h1>
+          <p className="text-gray-300">随机生成游戏装备名称</p>
+        </div>
+
+        {/* 生成按钮 */}
+        <div className="text-center mb-8">
+          <button
+            onClick={generateEquipment}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2 mx-auto"
+          >
+            <RefreshCw className="w-5 h-5" />
+            生成装备
+          </button>
+        </div>
+
+        {/* 当前生成的装备 */}
+        {currentEquipment && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-8 border border-white/20">
+            <div className="text-center">
+              <h2 className="text-xl text-gray-300 mb-4">✨ 新生成的装备</h2>
+              <div className={`flex flex-col items-center gap-4 rounded-lg p-6 border-2 ${getQualityBg(currentEquipment.quality)}`}>
+                <div className="flex items-center gap-4">
+                  <div className={getRarityColor(currentEquipment.quality)}>
+                    {getEquipmentIcon(currentEquipment.noun)}
+                  </div>
+                  <div>
+                    <div className={`text-2xl font-bold ${getRarityColor(currentEquipment.quality)}`}>
+                      {currentEquipment.name}
+                    </div>
+                    <div className="text-sm text-gray-400 mt-1">
+                      生成时间: {currentEquipment.timestamp}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 附魔词条显示 */}
+                {currentEquipment.enchantments && currentEquipment.enchantments.length > 0 && (
+                  <div className="w-full">
+                    <div className="text-sm text-gray-300 mb-2">附魔词条:</div>
+                    <div className="space-y-2">
+                      {currentEquipment.enchantments.map((enchantment, index) => (
+                        <div 
+                          key={index}
+                          className={`text-sm px-3 py-2 rounded-lg ${getEnchantmentStyle(enchantment)}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{enchantment.display}</span>
+                            <span className="text-xs opacity-70">
+                              {enchantment.category}
+                              {enchantment.type === 'skill' && ` (${enchantment.belongsTo}系)`}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 生成历史 */}
+        {equipmentHistory.length > 0 && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            <h3 className="text-xl font-semibold text-white mb-4">📜 生成历史</h3>
+            <div className="grid gap-3">
+              {equipmentHistory.map((equipment, index) => (
+                <div
+                  key={equipment.id}
+                  className={`rounded-lg p-4 border-2 ${getQualityBg(equipment.quality)} hover:scale-[1.02] transition-transform`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={getRarityColor(equipment.quality)}>
+                      {getEquipmentIcon(equipment.noun)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className={`font-semibold ${getRarityColor(equipment.quality)}`}>
+                          {equipment.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          #{equipmentHistory.length - index}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400 mb-2">
+                        {equipment.timestamp}
+                      </div>
+                      
+                      {/* 历史装备的附魔词条 */}
+                      {equipment.enchantments && equipment.enchantments.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {equipment.enchantments.map((enchantment, enchantmentIndex) => (
+                            <span 
+                              key={enchantmentIndex}
+                              className={`text-xs px-2 py-1 rounded ${getEnchantmentStyle(enchantment)}`}
+                              title={`${enchantment.category}${enchantment.type === 'skill' ? ` (${enchantment.belongsTo}系)` : ''}`}
+                            >
+                              {enchantment.display}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 附魔词条信息 */}
+        <div className="mt-8 grid md:grid-cols-2 gap-6">
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <h4 className="text-lg font-semibold text-white mb-3">🎯 属性词条</h4>
+            <div className="space-y-2 text-sm">
+              <div>
+                <span className="text-green-300">主属性</span>
+                <span className="text-gray-400 ml-2">({mainAttributes.length}个): {mainAttributes.join('、')}</span>
+              </div>
+              <div>
+                <span className="text-yellow-300">高级属性</span>
+                <span className="text-gray-400 ml-2">({advancedAttributes.length}个): {advancedAttributes.join('、')}</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                • 属性词条范围: +1 ~ +20<br/>
+                • 主属性生成概率: 90%<br/>
+                • 高级属性生成概率: 10%
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+            <h4 className="text-lg font-semibold text-white mb-3">⚔️ 技能词条</h4>
+            <div className="space-y-1 text-xs">
+              {Object.entries(skillsByAttribute).map(([attr, skills]) => (
+                <div key={attr} className="flex">
+                  <span className="text-gray-300 w-12 shrink-0">{attr}:</span>
+                  <span className="text-gray-400 text-xs">{skills.join('、')}</span>
+                </div>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500 mt-2">
+              • 技能词条范围: +1 ~ +20<br/>
+              • 共{allSkills.length}个技能，按6个属性分类
+            </div>
+          </div>
+        </div>
+
+        {/* 生成规则 */}
+        <div className="mt-6 bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+          <h4 className="text-lg font-semibold text-white mb-3">📋 附魔词条生成规则</h4>
+          <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <div className="text-gray-300 mb-2">品质词条数量:</div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div><span className="text-orange-400">传说</span>: 2-3个词条</div>
+                <div><span className="text-purple-400">史诗</span>: 2-3个词条</div>
+                <div><span className="text-blue-400">稀有</span>: 1-2个词条</div>
+              </div>
+            </div>
+            <div>
+              <div className="text-gray-300 mb-2">词条类型概率:</div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div>属性词条: 30%概率</div>
+                <div>技能词条: 70%概率</div>
+                <div>同装备不重复词条名称</div>
+                <div>技能词条显示归属属性系</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EquipmentGenerator;
